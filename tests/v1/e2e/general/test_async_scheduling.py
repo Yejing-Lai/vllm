@@ -5,6 +5,7 @@ from itertools import repeat
 from typing import Any
 
 import pytest
+import torch
 import torch._dynamo.config as dynamo_config
 
 from tests.utils import (
@@ -154,6 +155,10 @@ def test_with_eagle3_spec_decoding(sample_json_schema, monkeypatch: pytest.Monke
 
 
 @pytest.mark.flaky(reruns=2, only_on=current_platform.is_rocm())
+@pytest.mark.skipif(
+    current_platform.is_xpu(),
+    reason=("XPU matmul/attention kernels are not batch-invariant"),
+)
 def test_with_ngram_gpu_spec_decoding(monkeypatch: pytest.MonkeyPatch):
     """Test ngram_gpu speculative decoding with different configurations.
 
@@ -248,6 +253,7 @@ def run_tests(
             test_sampling_params,
         ):
             reason = None
+
             try:
                 check_outputs_equal(
                     outputs_0_lst=base_outs,
@@ -323,9 +329,10 @@ def run_test(
     attention_config: dict[str, Any] | None = None,
 ):
     spec_decoding = spec_config is not None
+    default_block_size = 64 if torch.xpu.is_available() else 16
     cache_arg: dict[str, Any] = (
         # Force preemptions
-        dict(num_gpu_blocks_override=32)
+        dict(num_gpu_blocks_override=512 // default_block_size)
         if test_preemption
         else dict(gpu_memory_utilization=0.9)
     )
