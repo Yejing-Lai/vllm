@@ -6,7 +6,6 @@ from functools import partial
 import pytest
 import torch
 
-import vllm.envs as envs
 from tests.compile.backend import TestBackend
 from tests.kernels.quantization.nvfp4_utils import quant_nvfp4_tensor
 from tests.utils import TestFP8Layer
@@ -232,7 +231,14 @@ CUDA_KERNELS = [
     CutlassFP8ScaledMMLinearKernel,
     PerTensorTorchFP8ScaledMMLinearKernel,
 ]
-TEST_KERNELS = ROCM_KERNELS if current_platform.is_rocm() else CUDA_KERNELS
+XPU_KERNELS = [PerTensorTorchFP8ScaledMMLinearKernel]
+
+if current_platform.is_rocm():
+    TEST_KERNELS = ROCM_KERNELS
+elif current_platform.is_xpu():
+    TEST_KERNELS = XPU_KERNELS
+else:
+    TEST_KERNELS = CUDA_KERNELS
 
 
 @pytest.mark.parametrize("num_tokens", [32, 64])
@@ -277,7 +283,12 @@ TEST_KERNELS = ROCM_KERNELS if current_platform.is_rocm() else CUDA_KERNELS
     ],
 )
 @pytest.mark.skipif(
-    envs.VLLM_TARGET_DEVICE not in ["cuda", "rocm"], reason="Only test on CUDA and ROCm"
+    not (
+        current_platform.is_cuda()
+        or current_platform.is_rocm()
+        or current_platform.is_xpu()
+    ),
+    reason="Only test on CUDA, ROCm, and XPU",
 )
 def test_fusion_silu_and_mul_quant(
     num_tokens: int,
@@ -305,7 +316,7 @@ def test_fusion_silu_and_mul_quant(
     ):
         pytest.skip("SiluMul+BlockQuant fusion not applicable with DeepGemm")
 
-    torch.set_default_device("cuda")
+    torch.set_default_device(current_platform.device_type)
     torch.set_default_dtype(dtype)
 
     x = torch.rand(num_tokens, hidden_size * 2)
