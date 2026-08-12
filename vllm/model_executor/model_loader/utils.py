@@ -145,6 +145,14 @@ def process_weights_after_loading(
     if model_config.quantization == "torchao":
         set_torchao_reload_attrs(model, model_config)
 
+    if model_config.enforce_eager:
+        from vllm import envs
+
+        if envs.VLLM_EAGER_FUSION:
+            from vllm.model_executor.eager_fusion import apply_eager_fusions
+
+            apply_eager_fusions(model)
+
 
 @contextmanager
 def device_loading_context(module: torch.nn.Module, target_device: torch.device):

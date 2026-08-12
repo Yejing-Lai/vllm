@@ -39,6 +39,10 @@ class XPUW8A8FP8LinearKernel(FP8ScaledMMLinearKernel):
             return False, "XPUW8A8FP8Linear only support on XPU"
         return True, None
 
+    def input_quant_key(self):
+        # hand off an already-quantized activation
+        return self.config.activation_quant_key
+
     @classmethod
     def can_implement(cls, c: FP8ScaledMMLinearLayerConfig) -> tuple[bool, str | None]:
         if c.weight_quant_key not in cls._SUPPORTED_WEIGHT_QUANT_KEYS:

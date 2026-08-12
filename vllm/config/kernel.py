@@ -34,6 +34,24 @@ class IrOpPriorityConfig:
     fused_add_rms_norm: list[str] = Field(default_factory=list)
     """Priority list for vllm.ir.ops.fused_add_rms_norm"""
 
+    rms_norm_static_fp8_quant: list[str] = Field(default_factory=list)
+    """Priority list for vllm.ir.ops.rms_norm_static_fp8_quant"""
+
+    fused_add_rms_norm_static_fp8_quant: list[str] = Field(default_factory=list)
+    """Priority list for vllm.ir.ops.fused_add_rms_norm_static_fp8_quant"""
+
+    silu_and_mul_quant: list[str] = Field(default_factory=list)
+    """Priority list for vllm.ir.ops.silu_and_mul_quant"""
+
+    rms_norm_mxfp4_quant: list[str] = Field(default_factory=list)
+    """Priority list for vllm.ir.ops.rms_norm_mxfp4_quant"""
+
+    silu_and_mul_mxfp4_quant: list[str] = Field(default_factory=list)
+    """Priority list for vllm.ir.ops.silu_and_mul_mxfp4_quant"""
+
+    fused_qk_norm_rope: list[str] = Field(default_factory=list)
+    """Priority list for vllm.ir.ops.fused_qk_norm_rope"""
+
     def compute_hash(self) -> str:
         """
         Produces a hash unique to the pass configuration.
